@@ -13,23 +13,23 @@ const SheetClose = SheetPrimitive.CloseButton;
 
 const portalVariants = cva('fixed inset-0 z-50 flex', {
   variants: {
-    position: {
+    side: {
       top: 'items-start',
       bottom: 'items-end',
       left: 'justify-start',
       right: 'justify-end',
     },
   },
-  defaultVariants: { position: 'right' },
+  defaultVariants: { side: 'right' },
 });
 
 type PortalProps = SheetPrimitive.DialogPortalProps & VariantProps<typeof portalVariants>;
 
 const SheetPortal: Component<PortalProps> = props => {
-  const [local, others] = splitProps(props, ['position', 'children']);
+  const [local, others] = splitProps(props, ['side', 'children']);
   return (
     <SheetPrimitive.Portal {...others}>
-      <div class={portalVariants({ position: local.position })}>{local.children}</div>
+      <div class={portalVariants({ side: local.side })}>{local.children}</div>
     </SheetPrimitive.Portal>
   );
 };
@@ -57,7 +57,7 @@ const sheetVariants = cva(
   'fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[closed=]:duration-300 data-[expanded=]:duration-500 data-[expanded=]:animate-in data-[closed=]:animate-out',
   {
     variants: {
-      position: {
+      side: {
         top: 'inset-x-0 top-0 border-b data-[closed=]:slide-out-to-top data-[expanded=]:slide-in-from-top',
         bottom:
           'inset-x-0 bottom-0 border-t data-[closed=]:slide-out-to-bottom data-[expanded=]:slide-in-from-bottom',
@@ -67,7 +67,7 @@ const sheetVariants = cva(
       },
     },
     defaultVariants: {
-      position: 'right',
+      side: 'right',
     },
   }
 );
@@ -79,16 +79,16 @@ const SheetContent = <T extends ValidComponent = 'div'>(
   props: PolymorphicProps<T, DialogContentProps<T>>
 ) => {
   const [local, others] = splitProps(props as DialogContentProps, [
-    'position',
+    'side',
     'class',
     'children',
   ]);
   return (
-    <SheetPortal position={local.position}>
+    <SheetPortal side={local.side}>
       <SheetOverlay />
       <SheetPrimitive.Content
         class={cn(
-          sheetVariants({ position: local.position }),
+          sheetVariants({ side: local.side }),
           local.class,
           'max-h-screen overflow-y-auto'
         )}

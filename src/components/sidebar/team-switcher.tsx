@@ -1,16 +1,19 @@
-'use client';
+import { Command } from 'lucide-solid';
+import { createMemo, type Component } from 'solid-js';
 
-import { Command } from 'lucide-react';
-import type * as React from 'react';
+type Team = {
+  name: string;
+  logo: Component;
+  plan: string;
+};
 
-export function TeamSwitcher(props: {
-  teams: {
-    name: string;
-    logo: React.ElementType;
-    plan: string;
-  }[];
-}) {
-  const activeTeam = props.teams[0];
+type TeamSwitcherProps = {
+  teams: Team[];
+};
+
+export const TeamSwitcher: Component<TeamSwitcherProps> = (props) => {
+  // Use createMemo to properly track reactivity of the activeTeam
+  const activeTeam = createMemo(() => props.teams[0]);
 
   return (
     <div class="flex items-center gap-2">
@@ -18,8 +21,8 @@ export function TeamSwitcher(props: {
         <Command class="h-4 w-4" />
       </div>
       <div>
-        <h2 class="text-sm font-semibold">{activeTeam.name}</h2>
-        <p class="text-xs text-gray-500">{activeTeam.plan}</p>
+        <h2 class="text-sm font-semibold">{activeTeam().name}</h2>
+        <p class="text-xs text-gray-500">{activeTeam().plan}</p>
       </div>
     </div>
   );

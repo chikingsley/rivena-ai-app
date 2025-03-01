@@ -54,6 +54,7 @@ export default [...fixupConfigRules(compat.extends(
             typescript: {
                 alwaysTryTypes: true,
                 project: "./tsconfig.json",
+                extensions: ['.tsx', '.ts', '.js', '.jsx']
             },
 
             node: {
@@ -66,7 +67,7 @@ export default [...fixupConfigRules(compat.extends(
         "solid/reactivity": "warn",
         "solid/no-destructure": "warn",
         "solid/jsx-no-undef": "error",
-
+        "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-unused-vars": ["warn", {
             argsIgnorePattern: "^_",
             varsIgnorePattern: "^_",

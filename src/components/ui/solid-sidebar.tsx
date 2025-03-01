@@ -13,6 +13,7 @@ import {
   JSX,
   splitProps,
 } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,7 @@ import { Slot } from '@/components/ui/slot';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile-solid';
 import { cn } from '@/lib/utils';
-
+  
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = '16rem';
@@ -79,7 +80,7 @@ const SidebarProvider: ParentComponent<SidebarProviderProps> = props => {
 
   const defaultOpen = local.defaultOpen ?? true;
   const openProp = () => local.open;
-  const setOpenProp = local.onOpenChange;
+  const setOpenProp = createMemo(() => local.onOpenChange);
 
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = createSignal(false);
@@ -91,8 +92,11 @@ const SidebarProvider: ParentComponent<SidebarProviderProps> = props => {
 
   const setOpen = (value: boolean | ((prev: boolean) => boolean)) => {
     const openState = typeof value === 'function' ? value(open()) : value;
-    if (setOpenProp) {
-      setOpenProp(openState);
+    if (setOpenProp()) {
+      const onChange = setOpenProp();
+      if (onChange) {
+        onChange(openState);
+      }
     } else {
       _setOpen(openState);
     }
@@ -179,8 +183,77 @@ const Sidebar: ParentComponent<SidebarProps> = props => {
 
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
 
-  if (collapsible() === 'none') {
-    return (
+  return (
+    <Show
+      when={collapsible() === 'none'}
+      fallback={
+        <Show
+          when={!isMobile()}
+          fallback={
+            <Sheet open={openMobile()} onOpenChange={setOpenMobile} {...others}>
+              <SheetContent
+                data-sidebar="sidebar"
+                data-slot="sidebar"
+                data-mobile="true"
+                class="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+                style={{
+                  '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
+                }}
+                side={side()}
+              >
+                <SheetHeader class="sr-only">
+                  <SheetTitle>Sidebar</SheetTitle>
+                  <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+                </SheetHeader>
+                <div class="flex h-full w-full flex-col">{local.children}</div>
+              </SheetContent>
+            </Sheet>
+          }
+        >
+          <div
+            class="group peer text-sidebar-foreground hidden md:block"
+            data-state={state()}
+            data-collapsible={state() === 'collapsed' ? collapsible() : ''}
+            data-variant={variant()}
+            data-side={side()}
+            data-slot="sidebar"
+          >
+            {/* This is what handles the sidebar gap on desktop */}
+            <div
+              class={cn(
+                'relative h-svh w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
+                'group-data-[collapsible=offcanvas]:w-0',
+                'group-data-[side=right]:rotate-180',
+                variant() === 'floating' || variant() === 'inset'
+                  ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
+                  : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)'
+              )}
+            />
+            <div
+              class={cn(
+                'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
+                side() === 'left'
+                  ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
+                  : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
+                // Adjust the padding for floating and inset variants.
+                variant() === 'floating' || variant() === 'inset'
+                  ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
+                  : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
+                local.class
+              )}
+              {...others}
+            >
+              <div
+                data-sidebar="sidebar"
+                class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+              >
+                {local.children}
+              </div>
+            </div>
+          </div>
+        </Show>
+      }
+    >
       <div
         data-slot="sidebar"
         class={cn(
@@ -190,74 +263,6 @@ const Sidebar: ParentComponent<SidebarProps> = props => {
         {...others}
       >
         {local.children}
-      </div>
-    );
-  }
-
-  return (
-    <Show
-      when={!isMobile()}
-      fallback={
-        <Sheet open={openMobile()} onOpenChange={setOpenMobile} {...others}>
-          <SheetContent
-            data-sidebar="sidebar"
-            data-slot="sidebar"
-            data-mobile="true"
-            class="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-            style={{
-              '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
-            }}
-            side={side}
-          >
-            <SheetHeader class="sr-only">
-              <SheetTitle>Sidebar</SheetTitle>
-              <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-            </SheetHeader>
-            <div class="flex h-full w-full flex-col">{local.children}</div>
-          </SheetContent>
-        </Sheet>
-      }
-    >
-      <div
-        class="group peer text-sidebar-foreground hidden md:block"
-        data-state={state()}
-        data-collapsible={state() === 'collapsed' ? collapsible() : ''}
-        data-variant={variant()}
-        data-side={side()}
-        data-slot="sidebar"
-      >
-        {/* This is what handles the sidebar gap on desktop */}
-        <div
-          class={cn(
-            'relative h-svh w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
-            'group-data-[collapsible=offcanvas]:w-0',
-            'group-data-[side=right]:rotate-180',
-            variant() === 'floating' || variant() === 'inset'
-              ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
-              : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)'
-          )}
-        />
-        <div
-          class={cn(
-            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
-            side() === 'left'
-              ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
-              : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
-            // Adjust the padding for floating and inset variants.
-            variant() === 'floating' || variant() === 'inset'
-              ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
-              : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
-            local.class
-          )}
-          {...others}
-        >
-          <div
-            data-sidebar="sidebar"
-            class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
-          >
-            {local.children}
-          </div>
-        </div>
       </div>
     </Show>
   );
@@ -282,7 +287,7 @@ const SidebarTrigger: ParentComponent<
       variant="ghost"
       size="icon"
       class={cn('h-7 w-7', local.class)}
-      onClick={event => {
+      onClick={(event: MouseEvent) => {
         local.onClick?.(event);
         toggleSidebar();
       }}
@@ -490,11 +495,13 @@ const SidebarGroupLabel: ParentComponent<
 > = props => {
   const [local, others] = splitProps(props, ['class', 'asChild', 'children']);
 
-  const asChild = local.asChild ?? false;
-  const Comp = asChild ? Slot : 'div';
-
+  // Create memos for local props to make them reactive
+  const asChild = createMemo(() => local.asChild ?? false);
+  
+  // Use Dynamic component with the memo result
   return (
-    <Comp
+    <Dynamic
+      component={asChild() ? Slot : 'div'}
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       class={cn(
@@ -505,7 +512,7 @@ const SidebarGroupLabel: ParentComponent<
       {...others}
     >
       {local.children}
-    </Comp>
+    </Dynamic>
   );
 };
 
@@ -519,11 +526,12 @@ const SidebarGroupAction: ParentComponent<
 > = props => {
   const [local, others] = splitProps(props, ['class', 'asChild', 'children']);
 
-  const asChild = local.asChild ?? false;
-  const Comp = asChild ? Slot : 'button';
-
+  // Create memos for local props
+  const asChild = createMemo(() => local.asChild ?? false);
+  
   return (
-    <Comp
+    <Dynamic
+      component={asChild() ? Slot : 'button'}
       data-slot="sidebar-group-action"
       data-sidebar="group-action"
       class={cn(
@@ -536,7 +544,7 @@ const SidebarGroupAction: ParentComponent<
       {...others}
     >
       {local.children}
-    </Comp>
+    </Dynamic>
   );
 };
 
@@ -648,44 +656,55 @@ const SidebarMenuButton: ParentComponent<
     'children',
   ]);
 
-  const asChild = local.asChild ?? false;
-  const isActive = local.isActive ?? false;
-  const variant = local.variant ?? 'default';
-  const size = local.size ?? 'default';
+  // Create memos for each prop that needs to be reactive
+  const asChild = createMemo(() => local.asChild ?? false);
+  const isActive = createMemo(() => local.isActive ?? false);
+  const variant = createMemo(() => local.variant ?? 'default');
+  const size = createMemo(() => local.size ?? 'default');
+  const tooltip = createMemo(() => local.tooltip);
 
-  const Comp = asChild ? Slot : 'button';
   const { isMobile, state } = useSidebar();
 
   const button = (
-    <Comp
+    <Dynamic
+      component={asChild() ? Slot : 'button'}
       data-slot="sidebar-menu-button"
       data-sidebar="menu-button"
-      data-size={size}
-      data-active={isActive}
-      class={cn(sidebarMenuButtonVariants({ variant, size }), local.class)}
+      data-size={size()}
+      data-active={isActive()}
+      class={cn(sidebarMenuButtonVariants({ variant: variant(), size: size() }), local.class)}
       {...others}
     >
       {local.children}
-    </Comp>
+    </Dynamic>
   );
 
-  if (!local.tooltip) {
-    return button;
-  }
+  // Calculate tooltip props within a memo to ensure reactivity
+  const tooltipContent = createMemo(() => {
+    const tooltipValue = tooltip();
+    if (!tooltipValue) return null;
+    
+    return typeof tooltipValue === 'string' 
+      ? { children: tooltipValue } 
+      : tooltipValue;
+  });
 
-  const tooltipProps =
-    typeof local.tooltip === 'string' ? { children: local.tooltip } : local.tooltip;
-
+  // Use Show for reactive conditional rendering
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent
-        side="right"
-        align="center"
-        hidden={state() !== 'collapsed' || isMobile()}
-        {...tooltipProps}
-      />
-    </Tooltip>
+    <Show
+      when={Boolean(tooltip())}
+      fallback={button}
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent
+          side="right"
+          align="center"
+          hidden={state() !== 'collapsed' || isMobile()}
+          {...tooltipContent()}
+        />
+      </Tooltip>
+    </Show>
   );
 };
 
@@ -701,12 +720,13 @@ const SidebarMenuAction: ParentComponent<
 > = props => {
   const [local, others] = splitProps(props, ['class', 'asChild', 'showOnHover', 'children']);
 
-  const asChild = local.asChild ?? false;
-  const showOnHover = local.showOnHover ?? false;
-  const Comp = asChild ? Slot : 'button';
-
+  // Create memos for local props
+  const asChild = createMemo(() => local.asChild ?? false);
+  const showOnHover = createMemo(() => local.showOnHover ?? false);
+  
   return (
-    <Comp
+    <Dynamic
+      component={asChild() ? Slot : 'button'}
       data-slot="sidebar-menu-action"
       data-sidebar="menu-action"
       class={cn(
@@ -717,14 +737,14 @@ const SidebarMenuAction: ParentComponent<
         'peer-data-[size=default]/menu-button:top-1.5',
         'peer-data-[size=lg]/menu-button:top-2.5',
         'group-data-[collapsible=icon]:hidden',
-        showOnHover &&
+        showOnHover() &&
           'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
         local.class
       )}
       {...others}
     >
       {local.children}
-    </Comp>
+    </Dynamic>
   );
 };
 
@@ -767,7 +787,8 @@ const SidebarMenuSkeleton: ParentComponent<
 > = props => {
   const [local, others] = splitProps(props, ['class', 'showIcon', 'children']);
 
-  const showIcon = local.showIcon ?? false;
+  // Create memo for showIcon
+  const showIcon = createMemo(() => local.showIcon ?? false);
 
   // Random width between 50 to 90%.
   const width = createMemo(() => {
@@ -781,7 +802,7 @@ const SidebarMenuSkeleton: ParentComponent<
       class={cn('flex h-8 items-center gap-2 rounded-md px-2', local.class)}
       {...others}
     >
-      {showIcon && <Skeleton class="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />}
+      {showIcon() && <Skeleton class="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />}
       <Skeleton
         class="h-4 max-w-(--skeleton-width) flex-1"
         data-sidebar="menu-skeleton-text"
@@ -852,29 +873,30 @@ const SidebarMenuSubButton: ParentComponent<
 > = props => {
   const [local, others] = splitProps(props, ['asChild', 'size', 'isActive', 'class', 'children']);
 
-  const asChild = local.asChild ?? false;
-  const size = local.size ?? 'md';
-  const isActive = local.isActive ?? false;
-  const Comp = asChild ? Slot : 'a';
-
+  // Create memos for props
+  const asChild = createMemo(() => local.asChild ?? false);
+  const size = createMemo(() => local.size ?? 'md');
+  const isActive = createMemo(() => local.isActive ?? false);
+  
   return (
-    <Comp
+    <Dynamic
+      component={asChild() ? Slot : 'a'}
       data-slot="sidebar-menu-sub-button"
       data-sidebar="menu-sub-button"
-      data-size={size}
-      data-active={isActive}
+      data-size={size()}
+      data-active={isActive()}
       class={cn(
         'text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
         'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground',
-        size === 'sm' && 'text-xs',
-        size === 'md' && 'text-sm',
+        size() === 'sm' && 'text-xs',
+        size() === 'md' && 'text-sm',
         'group-data-[collapsible=icon]:hidden',
         local.class
       )}
       {...others}
     >
       {local.children}
-    </Comp>
+    </Dynamic>
   );
 };
 

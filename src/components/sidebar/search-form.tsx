@@ -1,6 +1,11 @@
-import { Search } from 'lucide-react';
+import { Search } from 'lucide-solid';
+import type { Component } from 'solid-js';
 
-export function SearchForm(props: { className?: string }) {
+type SearchFormProps = {
+  className?: string;
+};
+
+export const SearchForm: Component<SearchFormProps> = (props) => {
   return (
     <div class={props.className}>
       <div class="relative w-full">
