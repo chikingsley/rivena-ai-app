@@ -1,35 +1,28 @@
-import { createSignal } from 'solid-js'
-import solidLogo from './assets/solid.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { lazy } from 'solid-js';
+import { Route, Router, Navigate } from '@solidjs/router';
+import { AuthProvider } from './lib/auth.tsx';
+import './App.css';
 
-function App() {
-  const [count, setCount] = createSignal(0)
+// Lazy load pages for better performance
+const Chat = lazy(() => import('./page/Chat'));
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} class="logo" alt="Vite logo" />
-        </a>
-        <a href="https://solidjs.com" target="_blank">
-          <img src={solidLogo} class="logo solid" alt="Solid logo" />
-        </a>
-      </div>
-      <h1>Vite + Solid</h1>
-      <div class="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count()}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p class="read-the-docs">
-        Click on the Vite and Solid logos to learn more
-      </p>
-    </>
-  )
+// Create a home page component that redirects to /chat
+function Home() {
+  return <Navigate href="/chat" />
 }
 
-export default App
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Route>
+          <Route path="/" component={Home} />
+          <Route path="/chat" component={Chat} />
+          {/* Add more routes as needed */}
+        </Route>
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;

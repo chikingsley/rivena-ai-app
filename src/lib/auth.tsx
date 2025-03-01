@@ -1,4 +1,4 @@
-import { createContext, useContext, createSignal, createEffect, onMount, createResource, JSX } from 'solid-js';
+import { createContext, useContext, createSignal, onMount, JSX } from 'solid-js';
 import { supabase } from './supabase';
 import type { Session, User } from '@supabase/supabase-js';
 
