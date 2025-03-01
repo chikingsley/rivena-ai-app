@@ -1,5 +1,6 @@
-import { lazy } from 'solid-js';
 import { Route, Router, Navigate } from '@solidjs/router';
+import { lazy } from 'solid-js';
+
 import { AuthProvider } from './lib/auth.tsx';
 import './App.css';
 
@@ -8,7 +9,7 @@ const Chat = lazy(() => import('./page/Chat'));
 
 // Create a home page component that redirects to /chat
 function Home() {
-  return <Navigate href="/chat" />
+  return <Navigate href="/chat" />;
 }
 
 function App() {

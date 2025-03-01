@@ -1,6 +1,7 @@
-import { createContext, useContext, createSignal, onMount, JSX } from 'solid-js';
-import { supabase } from './supabase';
 import type { Session, User } from '@supabase/supabase-js';
+import { createContext, useContext, createSignal, onMount, JSX } from 'solid-js';
+
+import { supabase } from './supabase';
 
 type AuthContextValue = {
   session: () => Session | null;
@@ -24,12 +25,12 @@ export function AuthProvider(props: { children: JSX.Element }) {
     setUser(data.session?.user ?? null);
     setLoading(false);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+    });
 
     return () => subscription.unsubscribe();
   });

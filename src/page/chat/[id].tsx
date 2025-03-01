@@ -1,4 +1,4 @@
-import { useParams } from "@solidjs/router";
+import { useParams } from '@solidjs/router';
 
 export default function ChatDetail() {
   const params = useParams(); // Get the :id from URL

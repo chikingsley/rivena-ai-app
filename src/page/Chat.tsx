@@ -1,13 +1,11 @@
-import { createSignal } from 'solid-js';
+import { createSignal, For } from 'solid-js';
+
 import { AppSidebar } from '../components/sidebar/app-sidebar';
-import {
-  SidebarInset,
-  SidebarProvider,
-} from '../components/ui/sidebar';
+import { SidebarInset, SidebarProvider } from '../components/ui/solid-sidebar';
 
 export default function Chat() {
   const [messages, setMessages] = createSignal([
-    { id: 1, text: 'Hello, how can I help you today?', sender: 'system' }
+    { id: 1, text: 'Hello, how can I help you today?', sender: 'system' },
   ]);
 
   return (
@@ -20,33 +18,40 @@ export default function Chat() {
           </header>
           <div class="flex-1 overflow-auto p-6">
             <div class="space-y-4">
-              {messages().map((message) => (
-                <div 
-                  class={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div 
-                    class={`rounded-lg px-4 py-2 max-w-[80%] ${message.sender === 'user' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted'}`}
+              <For each={messages()}>
+                {message => (
+                  <div
+                    class={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    {message.text}
+                    <div
+                      class={`rounded-lg px-4 py-2 max-w-[80%] ${
+                        message.sender === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      {message.text}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )}
+              </For>
             </div>
           </div>
           <div class="border-t p-4">
-            <form 
+            <form
               class="flex items-center gap-2"
-              onSubmit={(e) => {
+              onSubmit={e => {
                 e.preventDefault();
                 const input = e.currentTarget.querySelector('input');
                 if (input && input.value.trim()) {
-                  setMessages(prev => [...prev, { 
-                    id: prev.length + 1, 
-                    text: input.value, 
-                    sender: 'user' 
-                  }]);
+                  setMessages(prev => [
+                    ...prev,
+                    {
+                      id: prev.length + 1,
+                      text: input.value,
+                      sender: 'user',
+                    },
+                  ]);
                   input.value = '';
                 }
               }}
@@ -56,7 +61,7 @@ export default function Chat() {
                 placeholder="Type your message..."
                 class="flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
-              <button 
+              <button
                 type="submit"
                 class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
